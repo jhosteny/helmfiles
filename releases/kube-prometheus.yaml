@@ -134,9 +134,9 @@ releases:
           - {{ env "KUBE_PROMETHEUS_ALERT_MANAGER_INGRESS_HOST" }}
 {{- if eq (env "KUBE_PROMETHEUS_ALERT_MANAGER_INGRESS_TLS_ENABLED" | default "false") "true" }}
           tls:
-           - secretName: kube-prometheus-alert-manager-tls
-           hosts:
-           - {{ env "KUBE_PROMETHEUS_ALERT_MANAGER_INGRESS_HOST" }}
+            - secretName: kube-prometheus-alert-manager-tls
+              hosts:
+                - {{ env "KUBE_PROMETHEUS_ALERT_MANAGER_INGRESS_HOST" }}
 {{- end }}
 {{ if not ( env "KUBE_PROMETHEUS_ALERT_MANAGER_URL" | empty ) }}
         externalUrl: '{{ env "KUBE_PROMETHEUS_ALERT_MANAGER_URL" }}'

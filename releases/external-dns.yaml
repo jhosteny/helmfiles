@@ -27,7 +27,8 @@ releases:
   wait: true
   installed: {{ env "EXTERNAL_DNS_INSTALLED" | default "true" }}
   values:
-    - sources:
+    - logLevel: debug
+      sources:
       - service
       - ingress
 {{- if env "EXTERNAL_DNS_CRD_ENABLED" | default "false" | eq "true" }}

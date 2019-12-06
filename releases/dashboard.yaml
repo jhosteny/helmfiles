@@ -64,8 +64,12 @@ releases:
         enabled: {{ env "KUBERNETES_DASHBOARD_INGRESS_ENABLED" | default "false" }}
         annotations:
           kubernetes.io/ingress.class: {{ env "KUBERNETES_DASHBOARD_INGRESS_CLASS" | default "nginx" }}
+{{- if eq (env "KUBERNETES_DASHBOARD_INGRESS_TLS_ENABLED" | default "false") "true" }}
+          certmanager.k8s.io/cluster-issuer: "letsencrypt-staging"
+{{- end }}
 {{- if eq (env "KUBERNETES_DASHBOARD_ENABLE_INSECURE_LOGIN" | default "false") "false" }}
-          nginx.ingress.kubernetes.io/secure-backends: "true"
+          # nginx.ingress.kubernetes.io/secure-backends: "true"
+          nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
 {{- end }}
           kubernetes.io/tls-acme: '{{ env "KUBERNETES_DASHBOARD_INGRESS_USE_KUBE_LEGO" | default "false" }}'
         hosts:
