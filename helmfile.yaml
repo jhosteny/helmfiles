@@ -11,3 +11,4 @@ helmfiles:
   - "releases/heapster.yaml"
   - "releases/dashboard.yaml"
   - "releases/portal.yaml"
+  - "releases/concourse.yaml"
