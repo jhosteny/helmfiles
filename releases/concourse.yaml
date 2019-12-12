@@ -1,0 +1,160 @@
+repositories:
+# Stable repo of official helm charts
+- name: "stable"
+  url: "https://concourse-charts.storage.googleapis.com"
+
+releases:
+
+#######################################################################################
+## Concourse                                                                         ##
+## Open source CI / CD                                                               ##
+#######################################################################################
+
+#
+# References:
+#   - https://github.com/concourse/concourse-chart
+#
+- name: "concourse"
+  namespace: "concourse"
+  labels:
+    chart: "concourse"
+    repo: "concourse"
+    component: "ci"
+    namespace: "concourse"
+    vendor: "concourse"
+    default: "true"
+  chart: "../charts/concourse-chart"
+  version: "8.5.1"
+  wait: true
+  installed: {{ env "CONCOURSE_INSTALLED" | default "true" }}
+  values:
+    - concourse:
+        web:
+          clusterName: "Carnegie Robotics"
+          # concourse.prod.carnegierobotics.cloud
+          externalUrl: '{{ env "KUBERNETES_CONCOURSE_INGRESS_HOST" }}'
+          postgres:
+            host: '{{ env "CONCOURSE_POSTGRES_HOST" }}'
+            sslmode: enable
+            database: '{{ env "CONCOURSE_POSTGRES_DATABASE" | default "atc" }}'
+          kubernetes:
+            # Don't use Kubernetes for secrets
+            enabled: false
+          awsSsm:
+            enabled: true
+            region: '{{ env "AWS_REGION" }}'
+            keyAuth:
+              enabled: false
+          prometheus:
+            enabled: true
+          auth:
+            mainTeam:
+              ldap:
+                # Whitelisted group
+                group: crl_artifact_admins
+            ldap:
+              # TODO
+              enabled: false
+              displayName: 'CRL (JumpCloud) Auth'
+              ## (Required) The host and optional port of the LDAP server. If port isn't supplied, it will be guessed
+              ## based on the TLS configuration. 389 or 636.
+              ##
+              host: ldap.jumpcloud.com:389
+
+              ## (Required) Bind DN for searching LDAP users and groups. Typically this is a readOnly user.
+              ##
+              # ou='uid=<user>,ou=Users,o=<org>,dc=jumpcloud,dc=com'
+              bindDn: 'uid={{ env "CONCOURSE_LDAP_JUMPCLOUD_BIND_UID" }},ou=Users,o={{ env "CONCOURSE_LDAP_JUMPCLOUD_ORGANIZATION_ID" }},dc=jumpcloud,dc=com'
+
+              ## (Required) Bind Password for the user specified by 'bindDn'
+              ##
+              bindPw: '{{ env "CONCOURSE_LDAP_JUMPCLOUD_BIND_PASSWORD" }}'
+
+              ## Required if LDAP host does not use TLS.
+              ##
+              insecureNoSsl:
+
+              ## Skip certificate verification
+              ##
+              insecureSkipVerify:
+
+              ## Start on insecure port, then negotiate TLS
+              ##
+              startTls: true
+
+              ## CA certificate
+              ##
+              useCaCert:
+
+              ## BaseDN to start the search from. For example 'cn=users,dc=example,dc=com'
+              ##
+              userSearchBaseDn: 'ou=Users,o={{ env "CONCOURSE_LDAP_JUMPCLOUD_ORGANIZATION_ID" }},dc=jumpcloud,dc=com'
+
+              ## Optional filter to apply when searching the directory. For example '(objectClass=person)'
+              ##
+              userSearchFilter: '(objectClass=inetOrgPerson)'
+
+              ## Attribute to match against the inputted username. This will be translated and combined with the other
+              ## filter as '(<attr>=<username>)'.
+              ##
+              userSearchUsername: 'uid'
+
+              ## Can either be: 'sub'  search the whole sub tree or 'one' - only search one level. Defaults to 'sub'.
+              ##
+              userSearchScope:
+
+              ## A mapping of attributes on the user entry to claims. Defaults to 'uid'.
+              ##
+              userSearchIdAttr:
+
+              ## A mapping of attributes on the user entry to claims. Defaults to 'mail'.
+              ##
+              userSearchEmailAttr:
+
+              ## A mapping of attributes on the user entry to claims.
+              ##
+              userSearchNameAttr: 'displayName'
+
+              ## BaseDN to start the search from. For example 'cn=groups,dc=example,dc=com'
+              ##
+              groupSearchBaseDn: 'ou=Users,o={{ env "CONCOURSE_LDAP_JUMPCLOUD_ORGANIZATION_ID" }},dc=jumpcloud,dc=com'
+
+              ## Optional filter to apply when searching the directory. For example '(objectClass=posixGroup)'
+              ##
+              # TODO?: groupSearchFilter: '(objectClass=groupOfNames)'
+              groupSearchFilter: '(objectClass=posixGroup)'
+
+              ## Can either be: 'sub'  search the whole sub tree or 'one' - only search one level. Defaults to 'sub'.
+              ##
+              groupSearchScope:
+
+              ## Adds an additional requirement to the filter that an attribute in the group match the user's attribute value. The exact filter being added is: (<groupAttr>=<userAttr value>)
+              ##
+              groupSearchUserAttr: 'uid'
+
+              ## Adds an additional requirement to the filter that an attribute in the group match the user's attribute value. The exact filter being added is: (<groupAttr>=<userAttr value>)
+              ##
+              # TODO?: groupSearchGroupAttr: 'member'
+              groupSearchGroupAttr: 'memberUid'
+
+              ## The attribute of the group that represents its name.
+              ##
+              groupSearchNameAttr: 'cn'
+      web:
+        ingress:
+          enabled: true
+          annotations:
+            kubernetes.io/ingress.class: 'nginx'
+            nginx.ingress.kubernetes.io/backend-protocol: 'HTTPS'
+            certmanager.k8s.io/cluster-issuer: 'letsencrypt-staging'
+            kubernetes.io/tls-acme: 'true'
+          hosts: '{{ env "KUBERNETES_CONCOURSE_INGRESS_HOST" }}'
+          tls:
+            - secretName: concourse-web-tls
+              hosts:
+                - '{{ env "KUBERNETES_CONCOURSE_INGRESS_HOST" }}'
+      postgresql:
+        # Disable, since we will bring our own RDS instance
+        enabled: false
+      secrets:
+        create: false
