@@ -50,9 +50,14 @@ releases:
             mainTeam:
               # Should match one in local-users
               localUser: "concourse"
+              github:
+                org: carnegierobotics
+                team: devops-cloud-admin
               ldap:
                 # Whitelisted group
                 group: crl_artifact_admins
+            github:
+              enabled: true
             ldap:
               # TODO
               enabled: false
@@ -141,7 +146,14 @@ releases:
               ## The attribute of the group that represents its name.
               ##
               groupSearchNameAttr: 'cn'
+      worker:
+        annotations:
+          # This needs to be here.
+          iam.amazonaws.com/role: crl-prod-kiam-ssm-concourse
       web:
+        annotations:
+          # This needs to be here.
+          iam.amazonaws.com/role: crl-prod-kiam-ssm-concourse
         ingress:
           enabled: true
           annotations:
